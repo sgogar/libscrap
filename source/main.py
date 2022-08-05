@@ -5,7 +5,7 @@ import connector
 PAGE_DOMAIN = "https://libgen.is"
 PAGE_DOMAIN_BK = "https://libgen.rs/"
 
-PAGE_AMOUNT_TO_SCRAP = 5
+PAGE_AMOUNT_TO_SCRAP = 10
 
 
 class Scrapper:
@@ -25,9 +25,11 @@ class Scrapper:
         except:
           with open('errores.txt', 'a') as file:
             file.write(f'Error en link: {book_link}')
-            
-          book_response = requests.get(PAGE_DOMAIN_BK + book_link)
-          book_page = html.fromstring(book_response.text)
+          try:
+            book_response = requests.get(PAGE_DOMAIN_BK + book_link)
+            book_page = html.fromstring(book_response.text)
+          except:
+            file.write(f'Error en ambos dominios: {book_link}')
 
         self.scrap_book(book_page, connection, cursor)
 
@@ -61,9 +63,12 @@ class Scrapper:
     except:
       data_scrapped.append("")
 
+    data_scrapped[1] = data_scrapped[1].split(";")[0]
+
     # Subir a la base
     print(f'{data_scrapped[0]}: {data_scrapped}')
     print('\n\n\n\n\n\n')
+
     sql = "INSERT INTO libros (Title, Book_Language, Book_Year, ISBN, File_url, Time_added_modified, Author, Book_Description) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
     val = (data_scrapped[0],data_scrapped[1],data_scrapped[2],data_scrapped[3], data_scrapped[4], data_scrapped[5], data_scrapped[6], data_scrapped[7])
     cursor.execute(sql,val)
